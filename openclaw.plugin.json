@@ -32,6 +32,16 @@
         "default": "--download-path",
         "description": "Flag used by soundcloud-dl to choose where media files are stored."
       },
+      "downloaderForce": {
+        "type": "boolean",
+        "default": false,
+        "description": "Passes --force to overwrite an existing file in the target directory."
+      },
+      "downloaderSocksProxy": {
+        "type": "string",
+        "default": "",
+        "description": "Passes --socks-proxy to the downloader when a SOCKS5 proxy is required."
+      },
       "openclawCommand": {
         "type": "string",
         "default": "openclaw",
@@ -82,6 +92,13 @@
     "downloadPathFlag": {
       "label": "Download path flag",
       "placeholder": "--download-path"
+    },
+    "downloaderForce": {
+      "label": "Force overwrite"
+    },
+    "downloaderSocksProxy": {
+      "label": "SOCKS5 proxy",
+      "placeholder": "socks5://user:pass@host:1080"
     },
     "openclawCommand": {
       "label": "OpenClaw command",

@@ -2,9 +2,11 @@
 ![Sound Cloud](https://img.shields.io/badge/sound%20cloud-FF5500?style=for-the-badge&logo=soundcloud&logoColor=white)
 [![AI Slop Inside](https://sladge.net/badge.svg)](https://sladge.net)
 
+[![AI Slop Inside](https://sladge.net/badge.svg)](https://sladge.net)
+
 OpenClaw plugin that registers a `soundcloud` agent tool.
 
-The tool downloads a SoundCloud URL with [`psylo-dev/soundcloud-dl`](https://github.com/psylo-dev/soundcloud-dl), then sends the resulting audio file to a selected Telegram user or chat through OpenClaw:
+The tool downloads a SoundCloud URL with [`x3x3n0m0rph/soundcloud-dl`](https://github.com/x3x3n0m0rph/soundcloud-dl), then sends the resulting audio file to a selected Telegram user or chat through OpenClaw:
 
 ```powershell
 openclaw message send --channel telegram --target <target> --media <file>
@@ -34,7 +36,7 @@ and this download directory flag:
 Install from source:
 
 ```powershell
-go install github.com/psylo-dev/soundcloud-dl@latest
+go install github.com/x3x3n0m0rph/soundcloud-dl@latest
 ```
 
 On Windows, avoid configuring the command as bare `sc`: that usually resolves to `C:\Windows\system32\sc.exe`, the Service Control utility. Use `soundcloud-dl` or a full path to the downloaded binary.
@@ -84,6 +86,8 @@ With explicit commands and account:
           downloaderCommand: "soundcloud-dl",
           downloadPathFlag: "--download-path",
           downloaderArgs: ["--best"],
+          downloaderForce: false,
+          downloaderSocksProxy: "",
           openclawCommand: "openclaw",
           tempRoot: "C:/Temp/openclaw-soundcloud",
           timeoutSeconds: 600,
@@ -121,7 +125,7 @@ Example agent tool call payload:
 By default the plugin runs:
 
 ```powershell
-soundcloud-dl <url> --download-path <temp-media-dir> --best
+soundcloud-dl <url> --download-path <temp-media-dir> [--force] [--socks-proxy <proxy>] --best
 ```
 
 `<temp-media-dir>` is a unique directory created for each tool call under `tempRoot`. If `tempRoot` is not configured, the plugin uses the OS temp directory and creates directories like:
@@ -133,6 +137,8 @@ soundcloud-dl <url> --download-path <temp-media-dir> --best
 The plugin recursively scans that per-call directory and sends the newest completed file through OpenClaw Telegram media sending.
 
 You can replace `downloaderArgs` in plugin config. Arguments are passed directly to the downloader process after URL and `--download-path`; no shell string is built.
+
+`downloaderForce` and `downloaderSocksProxy` map directly to the corresponding CLI flags from your fork.
 
 ## Security Notes
 

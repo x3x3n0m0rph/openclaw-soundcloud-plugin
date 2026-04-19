@@ -11,6 +11,8 @@ type PluginConfig = {
   downloaderCommand?: string;
   downloaderArgs?: string[];
   downloadPathFlag?: string;
+  downloaderForce?: boolean;
+  downloaderSocksProxy?: string;
   openclawCommand?: string;
   timeoutSeconds?: number;
   maxFileBytes?: number;
@@ -42,6 +44,8 @@ const defaultConfig = {
   downloaderCommand: "soundcloud-dl",
   downloaderArgs: ["--best"],
   downloadPathFlag: "--download-path",
+  downloaderForce: false,
+  downloaderSocksProxy: "",
   openclawCommand: "openclaw",
   timeoutSeconds: 600,
   maxFileBytes: 50 * 1024 * 1024,
@@ -54,6 +58,8 @@ const defaultConfig = {
     | "downloaderCommand"
     | "downloaderArgs"
     | "downloadPathFlag"
+    | "downloaderForce"
+    | "downloaderSocksProxy"
     | "openclawCommand"
     | "timeoutSeconds"
     | "maxFileBytes"
@@ -139,6 +145,8 @@ export default definePluginEntry({
               url: params.url,
               downloadPathFlag: pluginConfig.downloadPathFlag,
               downloadPath: tempDir,
+              force: pluginConfig.downloaderForce,
+              socksProxy: pluginConfig.downloaderSocksProxy,
               extraArgs: pluginConfig.downloaderArgs,
             }),
             {
@@ -201,14 +209,26 @@ function buildDownloaderArgs(options: {
   url: string;
   downloadPathFlag: string;
   downloadPath: string;
+  force: boolean;
+  socksProxy: string;
   extraArgs: string[];
 }): string[] {
-  return [
+  const args = [
     options.url,
     options.downloadPathFlag,
     options.downloadPath,
-    ...options.extraArgs,
   ];
+
+  if (options.force) {
+    args.push("--force");
+  }
+
+  if (options.socksProxy.trim()) {
+    args.push("--socks-proxy", options.socksProxy.trim());
+  }
+
+  args.push(...options.extraArgs);
+  return args;
 }
 
 function validateSoundCloudUrl(urlValue: string, allowedHosts: string[]): void {

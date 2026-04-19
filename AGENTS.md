@@ -4,7 +4,7 @@
 
 This repository contains an OpenClaw plugin that registers the `soundcloud` agent tool.
 
-The tool downloads a SoundCloud URL through `psylo-dev/soundcloud-dl`, then sends the resulting file with:
+The tool downloads a SoundCloud URL through `x3x3n0m0rph/soundcloud-dl`, then sends the resulting file with:
 
 ```powershell
 openclaw message send --channel telegram --target <target> --media <file>
@@ -23,5 +23,5 @@ openclaw message send --channel telegram --target <target> --media <file>
 
 - Node.js 22 or newer.
 - OpenClaw CLI available as `openclaw`, unless `openclawCommand` is configured.
-- `psylo-dev/soundcloud-dl`, unless `downloaderCommand` is configured.
+- `x3x3n0m0rph/soundcloud-dl`, unless `downloaderCommand` is configured.
 - Telegram channel configured in OpenClaw.
