@@ -1,4 +1,6 @@
 # OpenClaw SoundCloud Plugin
+![Sound Cloud](https://img.shields.io/badge/sound%20cloud-FF5500?style=for-the-badge&logo=soundcloud&logoColor=white)
+[![AI Slop Inside](https://sladge.net/badge.svg)](https://sladge.net)
 
 OpenClaw plugin that registers a `soundcloud` agent tool.
 
