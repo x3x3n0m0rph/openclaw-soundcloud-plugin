@@ -143,7 +143,7 @@ You can replace `downloaderArgs` in plugin config. Arguments are passed directly
 ## Security Notes
 
 - The plugin only allows `soundcloud.com`, `on.soundcloud.com`, and `m.soundcloud.com` by default.
-- Commands are launched with `spawn(..., { shell: false })`.
+- Commands are launched through the OpenClaw system runtime helper rather than direct process spawning.
 - Downloaded files are stored in an isolated per-call directory and removed after sending unless `keepDownloadedFiles` is true.
 - Use Telegram allowlists and OpenClaw approval policies appropriate for your Gateway.
 

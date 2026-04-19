@@ -1,4 +1,3 @@
-import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, readdir, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -139,7 +138,8 @@ export default definePluginEntry({
         let downloaded: DownloadedFile | undefined;
 
         try {
-          const downloadResult = await runCommand(
+          const downloadResult = await runCommandWithRuntime(
+            api.runtime.system,
             pluginConfig.downloaderCommand,
             buildDownloaderArgs({
               url: params.url,
@@ -162,7 +162,7 @@ export default definePluginEntry({
             );
           }
 
-          await sendToTelegram({
+          await sendToTelegram(api.runtime.system, {
             openclawCommand: pluginConfig.openclawCommand,
             target,
             account,
@@ -258,7 +258,9 @@ function validateSoundCloudUrl(urlValue: string, allowedHosts: string[]): void {
   }
 }
 
-async function sendToTelegram(options: {
+async function sendToTelegram(
+  system: SystemRuntime,
+  options: {
   openclawCommand: string;
   target: string;
   account?: string;
@@ -285,10 +287,15 @@ async function sendToTelegram(options: {
     args.push("--message", options.message);
   }
 
-  await runCommand(options.openclawCommand, args, {
-    timeoutMs: options.timeoutMs,
-    label: "openclaw message send",
-  });
+  await runCommandWithRuntime(
+    system,
+    options.openclawCommand,
+    args,
+    {
+      timeoutMs: options.timeoutMs,
+      label: "openclaw message send",
+    },
+  );
 }
 
 async function findDownloadedFile(
@@ -346,92 +353,71 @@ async function collectFiles(directory: string): Promise<DownloadedFile[]> {
   return result;
 }
 
-function runCommand(
+type SystemRuntime = {
+  runCommandWithTimeout: (
+    command: string,
+    args: string[],
+    opts: { timeoutMs: number },
+  ) => Promise<unknown>;
+};
+
+async function runCommandWithRuntime(
+  system: SystemRuntime,
   command: string,
   args: string[],
   options: {
-    cwd?: string;
     timeoutMs: number;
     label: string;
   },
 ): Promise<CommandResult> {
-  return new Promise((resolveCommand, reject) => {
-    const child = spawn(command, args, {
-      cwd: options.cwd,
-      windowsHide: true,
-      shell: false,
-      stdio: ["ignore", "pipe", "pipe"],
+  let output: unknown;
+  try {
+    output = await system.runCommandWithTimeout(command, args, {
+      timeoutMs: options.timeoutMs,
     });
-
-    let stdout = "";
-    let stderr = "";
-    let settled = false;
-
-    const timeout = setTimeout(() => {
-      if (settled) {
-        return;
-      }
-
-      settled = true;
-      child.kill("SIGTERM");
-      reject(
-        new Error(
-          `${options.label} timed out after ${Math.ceil(options.timeoutMs / 1000)} seconds.`,
-        ),
-      );
-    }, options.timeoutMs);
-
-    child.stdout.setEncoding("utf8");
-    child.stderr.setEncoding("utf8");
-    child.stdout.on("data", (chunk: string) => {
-      stdout += truncateChunk(chunk, stdout.length);
-    });
-    child.stderr.on("data", (chunk: string) => {
-      stderr += truncateChunk(chunk, stderr.length);
-    });
-
-    child.on("error", (error) => {
-      if (settled) {
-        return;
-      }
-
-      settled = true;
-      clearTimeout(timeout);
-      reject(
-        new Error(`${options.label} failed to start: ${error.message}`),
-      );
-    });
-
-    child.on("close", (code, signal) => {
-      if (settled) {
-        return;
-      }
-
-      settled = true;
-      clearTimeout(timeout);
-
-      if (code === 0) {
-        resolveCommand({ stdout, stderr });
-        return;
-      }
-
-      const suffix = signal
-        ? `signal ${signal}`
-        : `exit code ${String(code)}`;
-      reject(
-        new Error(
-          `${options.label} failed with ${suffix}.\nstdout:\n${stdout}\nstderr:\n${stderr}`,
-        ),
-      );
-    });
-  });
-}
-
-function truncateChunk(chunk: string, currentLength: number): string {
-  const maxOutputLength = 12_000;
-  if (currentLength >= maxOutputLength) {
-    return "";
+  } catch (error) {
+    throw new Error(
+      `${options.label} failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 
-  return chunk.slice(0, maxOutputLength - currentLength);
+  return normalizeCommandResult(output);
+}
+
+function normalizeCommandResult(output: unknown): CommandResult {
+  if (typeof output === "string") {
+    return { stdout: output, stderr: "" };
+  }
+
+  if (output && typeof output === "object") {
+    const record = output as Record<string, unknown>;
+    const stdout = stringifyOutput(record.stdout ?? record.output ?? record.text);
+    const stderr = stringifyOutput(record.stderr ?? record.error ?? record.errors);
+    return { stdout, stderr };
+  }
+
+  return { stdout: "", stderr: "" };
+}
+
+function stringifyOutput(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => stringifyOutput(item))
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  if (value && typeof value === "object") {
+    try {
+      return JSON.stringify(value, null, 2);
+    } catch {
+      return String(value);
+    }
+  }
+
+  return value == null ? "" : String(value);
 }

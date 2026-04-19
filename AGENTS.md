@@ -14,7 +14,7 @@ openclaw message send --channel telegram --target <target> --media <file>
 
 - Keep the plugin as a small TypeScript ESM package.
 - Prefer OpenClaw public SDK imports such as `openclaw/plugin-sdk/plugin-entry`.
-- Do not introduce shell command construction. Use `spawn` with argument arrays.
+- Do not introduce shell command construction. Use OpenClaw runtime helpers for any required command execution.
 - Treat user-provided URLs, Telegram targets, and downloader arguments as untrusted.
 - Keep config documented in `openclaw.plugin.json` and `README.md`.
 - Run `npm run check` before handing off changes.

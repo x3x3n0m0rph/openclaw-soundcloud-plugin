@@ -26,6 +26,15 @@ declare module "openclaw/plugin-sdk/plugin-entry" {
 
   export type PluginApi = {
     config?: unknown;
+    runtime: {
+      system: {
+        runCommandWithTimeout(
+          command: string,
+          args: string[],
+          opts: { timeoutMs: number },
+        ): Promise<unknown>;
+      };
+    };
     registerTool(tool: AgentTool): void;
   };
 
