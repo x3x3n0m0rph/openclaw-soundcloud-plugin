@@ -2,8 +2,6 @@
 ![Sound Cloud](https://img.shields.io/badge/sound%20cloud-FF5500?style=for-the-badge&logo=soundcloud&logoColor=white)
 [![AI Slop Inside](https://sladge.net/badge.svg)](https://sladge.net)
 
-[![AI Slop Inside](https://sladge.net/badge.svg)](https://sladge.net)
-
 OpenClaw plugin that registers a `soundcloud` agent tool.
 
 The tool downloads a SoundCloud URL with [`x3x3n0m0rph/soundcloud-dl`](https://github.com/x3x3n0m0rph/soundcloud-dl), then sends the resulting audio file to a selected Telegram user or chat through OpenClaw:
