@@ -1,0 +1,97 @@
+{
+  "id": "soundcloud",
+  "name": "SoundCloud",
+  "description": "Registers a soundcloud tool that downloads a SoundCloud URL with soundcloud-dl and sends the resulting file through Telegram.",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "telegramTarget": {
+        "type": "string",
+        "description": "Default Telegram target: chat id or @username."
+      },
+      "telegramAccount": {
+        "type": "string",
+        "description": "Optional OpenClaw Telegram account id."
+      },
+      "downloaderCommand": {
+        "type": "string",
+        "default": "soundcloud-dl",
+        "description": "soundcloud-dl executable. The upstream command usage is: <binary> <url> [flags]. Avoid bare sc on Windows because it usually resolves to Service Control."
+      },
+      "downloaderArgs": {
+        "type": "array",
+        "items": { "type": "string" },
+        "default": [
+          "--best"
+        ],
+        "description": "Arguments passed to soundcloud-dl after URL and --download-path."
+      },
+      "downloadPathFlag": {
+        "type": "string",
+        "default": "--download-path",
+        "description": "Flag used by soundcloud-dl to choose where media files are stored."
+      },
+      "openclawCommand": {
+        "type": "string",
+        "default": "openclaw",
+        "description": "OpenClaw CLI executable used to send the Telegram media message."
+      },
+      "timeoutSeconds": {
+        "type": "integer",
+        "minimum": 10,
+        "maximum": 7200,
+        "default": 600
+      },
+      "maxFileBytes": {
+        "type": "integer",
+        "minimum": 1,
+        "default": 52428800
+      },
+      "keepDownloadedFiles": {
+        "type": "boolean",
+        "default": false
+      },
+      "tempRoot": {
+        "type": "string",
+        "description": "Optional parent directory for per-call media temp directories. Defaults to the OS temp directory under openclaw-soundcloud."
+      },
+      "allowedHosts": {
+        "type": "array",
+        "items": { "type": "string" },
+        "default": [
+          "soundcloud.com",
+          "on.soundcloud.com",
+          "m.soundcloud.com"
+        ]
+      }
+    }
+  },
+  "uiHints": {
+    "telegramTarget": {
+      "label": "Telegram target",
+      "placeholder": "@username or chat id"
+    },
+    "telegramAccount": {
+      "label": "Telegram account"
+    },
+    "downloaderCommand": {
+      "label": "Downloader command",
+      "placeholder": "soundcloud-dl"
+    },
+    "downloadPathFlag": {
+      "label": "Download path flag",
+      "placeholder": "--download-path"
+    },
+    "openclawCommand": {
+      "label": "OpenClaw command",
+      "placeholder": "openclaw"
+    },
+    "tempRoot": {
+      "label": "Temporary media root"
+    },
+    "keepDownloadedFiles": {
+      "label": "Keep downloaded files"
+    }
+  }
+}

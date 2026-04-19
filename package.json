@@ -1,0 +1,48 @@
+{
+  "name": "@local/openclaw-soundcloud",
+  "version": "0.1.0",
+  "description": "OpenClaw plugin that downloads a SoundCloud track with soundcloud-dl and sends it to a Telegram target.",
+  "type": "module",
+  "main": "./index.ts",
+  "files": [
+    "index.ts",
+    "openclaw.plugin.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "tsc --noEmit",
+    "pack:dry": "npm pack --dry-run"
+  },
+  "keywords": [
+    "openclaw",
+    "openclaw-plugin",
+    "soundcloud",
+    "telegram",
+    "yt-dlp"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.41"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "typescript": "^5.8.3"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "compat": {
+      "pluginApi": ">=2026.3.24-beta.2",
+      "minGatewayVersion": "2026.3.24-beta.2"
+    },
+    "build": {
+      "openclawVersion": "2026.3.24-beta.2",
+      "pluginSdkVersion": "2026.3.24-beta.2"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
