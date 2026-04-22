@@ -6,7 +6,7 @@ import { Type } from "@sinclair/typebox";
 type PluginConfig = {
   downloadFolder?: string;
   force?: boolean;
-  socksProxy?: string;
+  socksProxy?: string | null;
   timeoutSeconds?: number;
   allowedHosts?: string[];
 };

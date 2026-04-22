@@ -36,7 +36,7 @@ From this repository:
 ```powershell
 npm install
 openclaw plugins install -l .
-openclaw plugins enable soundcloud
+openclaw plugins enable openclaw-soundcloud-plugin
 ```
 
 Restart the OpenClaw Gateway after enabling or changing plugin config.
@@ -49,7 +49,7 @@ Minimal config:
 {
   plugins: {
     entries: {
-      soundcloud: {
+      openclaw-soundcloud-plugin: {
         enabled: true,
         config: {}
       }
@@ -58,23 +58,18 @@ Minimal config:
 }
 ```
 
-With explicit downloader options:
+With optional plugin options:
 
 ```json5
 {
   plugins: {
     entries: {
-      soundcloud: {
+      openclaw-soundcloud-plugin: {
         enabled: true,
         config: {
-          downloaderCommand: "soundcloud-dl",
-          downloadPathFlag: "--download-path",
-          downloaderArgs: ["--best"],
-          downloaderForce: false,
-          downloaderSocksProxy: "",
-          tempRoot: "/tmp/openclaw-soundcloud",
-          timeoutSeconds: 600,
-          maxFileBytes: 52428800
+          downloadFolder: "/tmp/openclaw/plugins/openclaw-soundcloud-plugin",
+          force: false,
+          socksProxy: null
         }
       }
     }

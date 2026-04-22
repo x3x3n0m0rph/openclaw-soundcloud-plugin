@@ -21,9 +21,9 @@
         "description": "Allows to overwrite an existing file in the target directory."
       },
       "socksProxy": {
-        "type": "string",
-        "default": null,
-        "description": "Passes to the downloader when a SOCKS5 proxy is required."
+        "description": "Passes to the downloader when a SOCKS5 proxy is required. Omit or set null to disable.",
+        "anyOf": [{ "type": "string" }, { "type": "null" }],
+        "default": null
       }
     }
   }
