@@ -10,7 +10,7 @@
         "type": "string",
         "description": "Track or playlist URL on the Soundcloud"
       },
-      "downloadFolder": {
+      "downloadPath": {
         "type": "string",
         "default": "/tmp/openclaw/plugins/openclaw-soundcloud-plugin",
         "description": "Flag used by soundcloud-dl to choose where media files are stored."
@@ -21,10 +21,17 @@
         "description": "Allows to overwrite an existing file in the target directory."
       },
       "socksProxy": {
-        "description": "Passes to the downloader when a SOCKS5 proxy is required. Omit or set null to disable.",
-        "anyOf": [{ "type": "string" }, { "type": "null" }],
-        "default": null
+        "type": "string",
+        "default": null,
+        "description": "Passes to the downloader when a SOCKS5 proxy is required."
       }
     }
-  }
+  },
+  "commandAliases": [
+    {
+      "name": "sound",
+      "kind": "runtime-slash",
+      "cliCommand": "memory"
+    }
+  ]
 }

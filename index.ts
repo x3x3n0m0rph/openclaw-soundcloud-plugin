@@ -1,8 +1,11 @@
 import { mkdir, mkdtemp, readdir, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { definePluginEntry } from "openclaw/plugin-sdk/plugin-entry";
 import { Type } from "@sinclair/typebox";
 
+import { definePluginEntry } from "openclaw/plugin-sdk/plugin-entry"; 
+import { runCommandWithTimeout } from "openclaw/plugin-sdk/process-runtime";
+
+ 
 type PluginConfig = {
   downloadFolder?: string;
   force?: boolean;
@@ -79,7 +82,7 @@ export default definePluginEntry({
           }),
         ),
       }),
-      async execute(_id: string, params: SoundCloudParams) {
+      async execute(_toolCallId: string, params: SoundCloudParams) {
         const timeoutSeconds = pluginConfig.timeoutSeconds;
         const targetUrl = params.url.trim();
         if (!targetUrl) {
@@ -95,7 +98,6 @@ export default definePluginEntry({
         const sessionDir = await mkdtemp(join(downloadRoot, "dl-"));
 
         const downloadResult = await runDownloader(
-          api.runtime.system,
           buildDownloaderArgs({
             url: targetUrl,
             downloadPath: sessionDir,
@@ -230,22 +232,12 @@ async function collectFiles(directory: string): Promise<DownloadedFile[]> {
   return result;
 }
 
-type SystemRuntime = {
-  runCommandWithTimeout: (
-    command: string,
-    args: string[],
-    opts: { timeoutMs: number },
-  ) => Promise<unknown>;
-};
-
-async function runDownloader(
-  system: SystemRuntime,
+async function runDownloader( 
   args: string[],
   options: { timeoutMs: number },
 ): Promise<CommandResult> {
-  const output = await system.runCommandWithTimeout(
-    DOWNLOADER_COMMAND,
-    args,
+  const output = await runCommandWithTimeout(
+    [DOWNLOADER_COMMAND, ...args],
     { timeoutMs: options.timeoutMs },
   );
   return normalizeCommandResult(output);
