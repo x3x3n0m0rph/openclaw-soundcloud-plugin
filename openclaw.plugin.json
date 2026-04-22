@@ -1,83 +1,30 @@
 {
-  "id": "soundcloud",
-  "name": "SoundCloud",
+  "id": "openclaw-soundcloud-plugin",
+  "name": "SoundCloud download plugin",
   "description": "Registers a soundcloud tool that downloads a SoundCloud URL with soundcloud-dl and returns the downloaded file path.",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "downloaderCommand": {
+      "url": {
         "type": "string",
-        "default": "soundcloud-dl",
-        "description": "soundcloud-dl executable. The upstream command usage is: <binary> <url> [flags]. Avoid bare sc on Windows because it usually resolves to Service Control."
+        "description": "Track or playlist URL on the Soundcloud"
       },
-      "downloaderArgs": {
-        "type": "array",
-        "items": { "type": "string" },
-        "default": [
-          "--best"
-        ],
-        "description": "Arguments passed to soundcloud-dl after URL and --download-path."
-      },
-      "downloadPathFlag": {
+      "downloadFolder": {
         "type": "string",
-        "default": "--download-path",
+        "default": "/tmp/openclaw/plugins/openclaw-soundcloud-plugin",
         "description": "Flag used by soundcloud-dl to choose where media files are stored."
       },
-      "downloaderForce": {
+      "force": {
         "type": "boolean",
         "default": false,
-        "description": "Passes --force to overwrite an existing file in the target directory."
+        "description": "Allows to overwrite an existing file in the target directory."
       },
-      "downloaderSocksProxy": {
+      "socksProxy": {
         "type": "string",
-        "default": "",
-        "description": "Passes --socks-proxy to the downloader when a SOCKS5 proxy is required."
-      },
-      "timeoutSeconds": {
-        "type": "integer",
-        "minimum": 10,
-        "maximum": 7200,
-        "default": 600
-      },
-      "maxFileBytes": {
-        "type": "integer",
-        "minimum": 1,
-        "default": 52428800
-      },
-      "tempRoot": {
-        "type": "string",
-        "description": "Optional parent directory for per-call media temp directories. Defaults to the OS temp directory under openclaw-soundcloud."
-      },
-      "allowedHosts": {
-        "type": "array",
-        "items": { "type": "string" },
-        "default": [
-          "soundcloud.com",
-          "on.soundcloud.com",
-          "m.soundcloud.com"
-        ]
+        "default": null,
+        "description": "Passes to the downloader when a SOCKS5 proxy is required."
       }
-    }
-  },
-  "uiHints": {
-    "downloaderCommand": {
-      "label": "Downloader command",
-      "placeholder": "soundcloud-dl"
-    },
-    "downloadPathFlag": {
-      "label": "Download path flag",
-      "placeholder": "--download-path"
-    },
-    "downloaderForce": {
-      "label": "Force overwrite"
-    },
-    "downloaderSocksProxy": {
-      "label": "SOCKS5 proxy",
-      "placeholder": "socks5://user:pass@host:1080"
-    },
-    "tempRoot": {
-      "label": "Temporary media root"
     }
   }
 }

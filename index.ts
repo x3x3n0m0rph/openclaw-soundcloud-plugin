@@ -1,24 +1,19 @@
 import { mkdir, mkdtemp, readdir, stat } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { definePluginEntry } from "openclaw/plugin-sdk/plugin-entry";
 import { Type } from "@sinclair/typebox";
 
 type PluginConfig = {
-  downloaderCommand?: string;
-  downloaderArgs?: string[];
-  downloadPathFlag?: string;
-  downloaderForce?: boolean;
-  downloaderSocksProxy?: string;
+  downloadFolder?: string;
+  force?: boolean;
+  socksProxy?: string | null;
   timeoutSeconds?: number;
-  maxFileBytes?: number;
-  tempRoot?: string;
   allowedHosts?: string[];
 };
 
 type SoundCloudParams = {
   url: string;
-  timeoutSeconds?: number;
+  downloadFolder?: string;
 };
 
 type CommandResult = {
@@ -32,27 +27,21 @@ type DownloadedFile = {
   mtimeMs: number;
 };
 
+const DOWNLOADER_COMMAND = "soundcloud-dl";
+
 const defaultConfig = {
-  downloaderCommand: "soundcloud-dl",
-  downloaderArgs: ["--best"],
-  downloadPathFlag: "--download-path",
-  downloaderForce: false,
-  downloaderSocksProxy: "",
+  downloadFolder: "/tmp/openclaw/plugins/openclaw-soundcloud-plugin",
+  force: false,
+  socksProxy: null as string | null,
   timeoutSeconds: 600,
-  maxFileBytes: 50 * 1024 * 1024,
-  tempRoot: join(tmpdir(), "openclaw-soundcloud"),
   allowedHosts: ["soundcloud.com", "on.soundcloud.com", "m.soundcloud.com"],
 } satisfies Required<
   Pick<
     PluginConfig,
-    | "downloaderCommand"
-    | "downloaderArgs"
-    | "downloadPathFlag"
-    | "downloaderForce"
-    | "downloaderSocksProxy"
+    | "downloadFolder"
+    | "force"
+    | "socksProxy"
     | "timeoutSeconds"
-    | "maxFileBytes"
-    | "tempRoot"
     | "allowedHosts"
   >
 >;
@@ -66,64 +55,59 @@ const transientExtensions = [
 ];
 
 export default definePluginEntry({
-  id: "soundcloud",
-  name: "SoundCloud",
-  description:
-    "Downloads a SoundCloud track through a configured CLI command and returns the downloaded file path.",
+  id: "openclaw-soundcloud-plugin",
+  name: "SoundCloud download plugin",
+  description: "Registers a soundcloud tool that downloads a SoundCloud URL with soundcloud-dl and returns the downloaded file path.",
   register(api) {
     const pluginConfig = {
       ...defaultConfig,
-      ...((api as { config?: PluginConfig }).config ?? {}),
+      ...((api as { config?: Partial<PluginConfig> }).config ?? {}),
     };
 
     api.registerTool({
       name: "soundcloud",
-      label: "SoundCloud",
-      description:
-        "Download a SoundCloud URL and return the resulting audio file path.",
+      label: "SoundCloud download tool",
+      description: "Download a SoundCloud track or playlist URL and return the resulting audio file path. No shell command is required; pass the URL only.",
       parameters: Type.Object({
         url: Type.String({
-          description: "SoundCloud track URL, for example https://soundcloud.com/artist/track.",
-        }),
-        timeoutSeconds: Type.Optional(
-          Type.Integer({
-            minimum: 10,
-            maximum: 7200,
-            description: "Optional per-call timeout for the download command.",
+            description:
+              "SoundCloud track or playlist URL. Should be in domain or subdomain soundcloud.com",
+          }),
+        downloadFolder: Type.Optional(
+          Type.String({ 
+            description: "Flag used by soundcloud-dl to choose where media files are stored.",
           }),
         ),
       }),
       async execute(_id: string, params: SoundCloudParams) {
-        const timeoutSeconds =
-          params.timeoutSeconds ?? pluginConfig.timeoutSeconds;
-        validateSoundCloudUrl(params.url, pluginConfig.allowedHosts);
+        const timeoutSeconds = pluginConfig.timeoutSeconds;
+        const targetUrl = params.url.trim();
+        if (!targetUrl) {
+          throw new Error(
+            "url is required: set tool parameter `url` or plugin config `url`.",
+          );
+        }
+        validateSoundCloudUrl(targetUrl, pluginConfig.allowedHosts);
 
-        const tempDir = await createMediaTempDir(pluginConfig.tempRoot);
-        let downloaded: DownloadedFile | undefined;
+        const downloadRoot = resolve(pluginConfig.downloadFolder);
+        await mkdir(downloadRoot, { recursive: true });
 
-        const downloadResult = await runCommandWithRuntime(
+        const sessionDir = await mkdtemp(join(downloadRoot, "dl-"));
+
+        const downloadResult = await runDownloader(
           api.runtime.system,
-          pluginConfig.downloaderCommand,
           buildDownloaderArgs({
-            url: params.url,
-            downloadPathFlag: pluginConfig.downloadPathFlag,
-            downloadPath: tempDir,
-            force: pluginConfig.downloaderForce,
-            socksProxy: pluginConfig.downloaderSocksProxy,
-            extraArgs: pluginConfig.downloaderArgs,
+            url: targetUrl,
+            downloadPath: sessionDir,
+            force: pluginConfig.force,
+            socksProxy: pluginConfig.socksProxy,
           }),
           {
             timeoutMs: timeoutSeconds * 1000,
-            label: "downloader",
           },
         );
 
-        downloaded = await findDownloadedFile(tempDir, downloadResult);
-        if (downloaded.size > pluginConfig.maxFileBytes) {
-          throw new Error(
-            `Downloaded file is ${downloaded.size} bytes, above configured maxFileBytes=${pluginConfig.maxFileBytes}.`,
-          );
-        }
+        const downloaded = await findDownloadedFile(sessionDir, downloadResult);
 
         return {
           details: {
@@ -142,35 +126,25 @@ export default definePluginEntry({
   },
 });
 
-async function createMediaTempDir(tempRoot: string): Promise<string> {
-  const root = resolve(tempRoot);
-  await mkdir(root, { recursive: true });
-  return mkdtemp(join(root, "media-"));
-}
-
 function buildDownloaderArgs(options: {
   url: string;
-  downloadPathFlag: string;
   downloadPath: string;
   force: boolean;
-  socksProxy: string;
-  extraArgs: string[];
+  socksProxy: string | null | undefined;
 }): string[] {
-  const args = [
-    options.url,
-    options.downloadPathFlag,
-    options.downloadPath,
-  ];
+  const args = [options.url, "--download-path", options.downloadPath];
 
   if (options.force) {
     args.push("--force");
   }
 
-  if (options.socksProxy.trim()) {
-    args.push("--socks-proxy", options.socksProxy.trim());
+  const proxy =
+    typeof options.socksProxy === "string" ? options.socksProxy.trim() : "";
+  if (proxy) {
+    args.push("--socks-proxy", proxy);
   }
 
-  args.push(...options.extraArgs);
+  args.push("--best");
   return args;
 }
 
@@ -264,26 +238,16 @@ type SystemRuntime = {
   ) => Promise<unknown>;
 };
 
-async function runCommandWithRuntime(
+async function runDownloader(
   system: SystemRuntime,
-  command: string,
   args: string[],
-  options: {
-    timeoutMs: number;
-    label: string;
-  },
+  options: { timeoutMs: number },
 ): Promise<CommandResult> {
-  let output: unknown;
-  try {
-    output = await system.runCommandWithTimeout(command, args, {
-      timeoutMs: options.timeoutMs,
-    });
-  } catch (error) {
-    throw new Error(
-      `${options.label} failed: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
-
+  const output = await system.runCommandWithTimeout(
+    DOWNLOADER_COMMAND,
+    args,
+    { timeoutMs: options.timeoutMs },
+  );
   return normalizeCommandResult(output);
 }
 
