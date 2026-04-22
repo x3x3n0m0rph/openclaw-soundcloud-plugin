@@ -1,19 +1,11 @@
 {
   "id": "soundcloud",
   "name": "SoundCloud",
-  "description": "Registers a soundcloud tool that downloads a SoundCloud URL with soundcloud-dl and sends the resulting file through Telegram.",
+  "description": "Registers a soundcloud tool that downloads a SoundCloud URL with soundcloud-dl and returns the downloaded file path.",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "telegramTarget": {
-        "type": "string",
-        "description": "Default Telegram target: chat id or @username."
-      },
-      "telegramAccount": {
-        "type": "string",
-        "description": "Optional OpenClaw Telegram account id."
-      },
       "downloaderCommand": {
         "type": "string",
         "default": "soundcloud-dl",
@@ -42,11 +34,6 @@
         "default": "",
         "description": "Passes --socks-proxy to the downloader when a SOCKS5 proxy is required."
       },
-      "openclawCommand": {
-        "type": "string",
-        "default": "openclaw",
-        "description": "OpenClaw CLI executable used to send the Telegram media message."
-      },
       "timeoutSeconds": {
         "type": "integer",
         "minimum": 10,
@@ -57,10 +44,6 @@
         "type": "integer",
         "minimum": 1,
         "default": 52428800
-      },
-      "keepDownloadedFiles": {
-        "type": "boolean",
-        "default": false
       },
       "tempRoot": {
         "type": "string",
@@ -78,13 +61,6 @@
     }
   },
   "uiHints": {
-    "telegramTarget": {
-      "label": "Telegram target",
-      "placeholder": "@username or chat id"
-    },
-    "telegramAccount": {
-      "label": "Telegram account"
-    },
     "downloaderCommand": {
       "label": "Downloader command",
       "placeholder": "soundcloud-dl"
@@ -100,15 +76,8 @@
       "label": "SOCKS5 proxy",
       "placeholder": "socks5://user:pass@host:1080"
     },
-    "openclawCommand": {
-      "label": "OpenClaw command",
-      "placeholder": "openclaw"
-    },
     "tempRoot": {
       "label": "Temporary media root"
-    },
-    "keepDownloadedFiles": {
-      "label": "Keep downloaded files"
     }
   }
 }

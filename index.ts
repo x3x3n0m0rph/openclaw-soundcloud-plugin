@@ -1,30 +1,23 @@
-import { mkdir, mkdtemp, readdir, rm, stat } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { definePluginEntry } from "openclaw/plugin-sdk/plugin-entry";
 import { Type } from "@sinclair/typebox";
 
 type PluginConfig = {
-  telegramTarget?: string;
-  telegramAccount?: string;
   downloaderCommand?: string;
   downloaderArgs?: string[];
   downloadPathFlag?: string;
   downloaderForce?: boolean;
   downloaderSocksProxy?: string;
-  openclawCommand?: string;
   timeoutSeconds?: number;
   maxFileBytes?: number;
-  keepDownloadedFiles?: boolean;
   tempRoot?: string;
   allowedHosts?: string[];
 };
 
 type SoundCloudParams = {
   url: string;
-  telegramTarget?: string;
-  telegramAccount?: string;
-  message?: string;
   timeoutSeconds?: number;
 };
 
@@ -45,10 +38,8 @@ const defaultConfig = {
   downloadPathFlag: "--download-path",
   downloaderForce: false,
   downloaderSocksProxy: "",
-  openclawCommand: "openclaw",
   timeoutSeconds: 600,
   maxFileBytes: 50 * 1024 * 1024,
-  keepDownloadedFiles: false,
   tempRoot: join(tmpdir(), "openclaw-soundcloud"),
   allowedHosts: ["soundcloud.com", "on.soundcloud.com", "m.soundcloud.com"],
 } satisfies Required<
@@ -59,10 +50,8 @@ const defaultConfig = {
     | "downloadPathFlag"
     | "downloaderForce"
     | "downloaderSocksProxy"
-    | "openclawCommand"
     | "timeoutSeconds"
     | "maxFileBytes"
-    | "keepDownloadedFiles"
     | "tempRoot"
     | "allowedHosts"
   >
@@ -80,7 +69,7 @@ export default definePluginEntry({
   id: "soundcloud",
   name: "SoundCloud",
   description:
-    "Downloads a SoundCloud track through a configured CLI command and sends it to Telegram from OpenClaw.",
+    "Downloads a SoundCloud track through a configured CLI command and returns the downloaded file path.",
   register(api) {
     const pluginConfig = {
       ...defaultConfig,
@@ -91,45 +80,20 @@ export default definePluginEntry({
       name: "soundcloud",
       label: "SoundCloud",
       description:
-        "Download a SoundCloud URL and send the resulting audio file to a selected Telegram user or chat through OpenClaw.",
+        "Download a SoundCloud URL and return the resulting audio file path.",
       parameters: Type.Object({
         url: Type.String({
           description: "SoundCloud track URL, for example https://soundcloud.com/artist/track.",
         }),
-        telegramTarget: Type.Optional(
-          Type.String({
-            description:
-              "Telegram target chat id or @username. Defaults to plugin config telegramTarget.",
-          }),
-        ),
-        telegramAccount: Type.Optional(
-          Type.String({
-            description:
-              "Optional OpenClaw Telegram account id. Defaults to plugin config telegramAccount.",
-          }),
-        ),
-        message: Type.Optional(
-          Type.String({
-            description: "Optional caption/message sent with the file.",
-          }),
-        ),
         timeoutSeconds: Type.Optional(
           Type.Integer({
             minimum: 10,
             maximum: 7200,
-            description: "Optional per-call timeout for download and send commands.",
+            description: "Optional per-call timeout for the download command.",
           }),
         ),
       }),
       async execute(_id: string, params: SoundCloudParams) {
-        const target = params.telegramTarget ?? pluginConfig.telegramTarget;
-        if (!target) {
-          throw new Error(
-            "telegramTarget is required either in tool parameters or plugin config.",
-          );
-        }
-
-        const account = params.telegramAccount ?? pluginConfig.telegramAccount;
         const timeoutSeconds =
           params.timeoutSeconds ?? pluginConfig.timeoutSeconds;
         validateSoundCloudUrl(params.url, pluginConfig.allowedHosts);
@@ -137,63 +101,42 @@ export default definePluginEntry({
         const tempDir = await createMediaTempDir(pluginConfig.tempRoot);
         let downloaded: DownloadedFile | undefined;
 
-        try {
-          const downloadResult = await runCommandWithRuntime(
-            api.runtime.system,
-            pluginConfig.downloaderCommand,
-            buildDownloaderArgs({
-              url: params.url,
-              downloadPathFlag: pluginConfig.downloadPathFlag,
-              downloadPath: tempDir,
-              force: pluginConfig.downloaderForce,
-              socksProxy: pluginConfig.downloaderSocksProxy,
-              extraArgs: pluginConfig.downloaderArgs,
-            }),
-            {
-              timeoutMs: timeoutSeconds * 1000,
-              label: "downloader",
-            },
-          );
-
-          downloaded = await findDownloadedFile(tempDir, downloadResult);
-          if (downloaded.size > pluginConfig.maxFileBytes) {
-            throw new Error(
-              `Downloaded file is ${downloaded.size} bytes, above configured maxFileBytes=${pluginConfig.maxFileBytes}.`,
-            );
-          }
-
-          await sendToTelegram(api.runtime.system, {
-            openclawCommand: pluginConfig.openclawCommand,
-            target,
-            account,
-            filePath: downloaded.path,
-            message: params.message,
+        const downloadResult = await runCommandWithRuntime(
+          api.runtime.system,
+          pluginConfig.downloaderCommand,
+          buildDownloaderArgs({
+            url: params.url,
+            downloadPathFlag: pluginConfig.downloadPathFlag,
+            downloadPath: tempDir,
+            force: pluginConfig.downloaderForce,
+            socksProxy: pluginConfig.downloaderSocksProxy,
+            extraArgs: pluginConfig.downloaderArgs,
+          }),
+          {
             timeoutMs: timeoutSeconds * 1000,
-          });
+            label: "downloader",
+          },
+        );
 
-          const keepNote = pluginConfig.keepDownloadedFiles
-            ? `\nDownloaded file kept at: ${downloaded.path}`
-            : "";
-
-          return {
-            details: {
-              telegramTarget: target,
-              downloadedFile: pluginConfig.keepDownloadedFiles
-                ? downloaded.path
-                : undefined,
-            },
-            content: [
-              {
-                type: "text",
-                text: `Sent SoundCloud media to Telegram target ${target}.${keepNote}`,
-              },
-            ],
-          };
-        } finally {
-          if (!pluginConfig.keepDownloadedFiles) {
-            await rm(tempDir, { recursive: true, force: true });
-          }
+        downloaded = await findDownloadedFile(tempDir, downloadResult);
+        if (downloaded.size > pluginConfig.maxFileBytes) {
+          throw new Error(
+            `Downloaded file is ${downloaded.size} bytes, above configured maxFileBytes=${pluginConfig.maxFileBytes}.`,
+          );
         }
+
+        return {
+          details: {
+            downloadedFile: downloaded.path,
+            sizeBytes: downloaded.size,
+          },
+          content: [
+            {
+              type: "text",
+              text: `Downloaded SoundCloud media to: ${downloaded.path}`,
+            },
+          ],
+        };
       },
     });
   },
@@ -256,46 +199,6 @@ function validateSoundCloudUrl(urlValue: string, allowedHosts: string[]): void {
       `url host "${parsed.hostname}" is not allowed. Allowed hosts: ${allowedHosts.join(", ")}.`,
     );
   }
-}
-
-async function sendToTelegram(
-  system: SystemRuntime,
-  options: {
-  openclawCommand: string;
-  target: string;
-  account?: string;
-  filePath: string;
-  message?: string;
-  timeoutMs: number;
-}): Promise<void> {
-  const args = [
-    "message",
-    "send",
-    "--channel",
-    "telegram",
-    "--target",
-    options.target,
-    "--media",
-    options.filePath,
-  ];
-
-  if (options.account) {
-    args.push("--account", options.account);
-  }
-
-  if (options.message) {
-    args.push("--message", options.message);
-  }
-
-  await runCommandWithRuntime(
-    system,
-    options.openclawCommand,
-    args,
-    {
-      timeoutMs: options.timeoutMs,
-      label: "openclaw message send",
-    },
-  );
 }
 
 async function findDownloadedFile(

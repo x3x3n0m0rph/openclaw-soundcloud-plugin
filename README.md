@@ -4,19 +4,11 @@
 
 OpenClaw plugin that registers a `soundcloud` agent tool.
 
-The tool downloads a SoundCloud URL with [`x3x3n0m0rph/soundcloud-dl`](https://github.com/x3x3n0m0rph/soundcloud-dl), then sends the resulting audio file to a selected Telegram user or chat through OpenClaw:
-
-```powershell
-openclaw message send --channel telegram --target <target> --media <file>
-```
-
-This means Telegram delivery happens from the configured OpenClaw Telegram channel, not from a separate bot in this plugin.
+The tool downloads a SoundCloud URL with [`x3x3n0m0rph/soundcloud-dl`](https://github.com/x3x3n0m0rph/soundcloud-dl) and returns the path to the downloaded audio file.
 
 ## Requirements
 
 - Node.js 22 or newer.
-- OpenClaw with Telegram configured.
-- `openclaw` CLI available in `PATH`, unless `openclawCommand` is configured.
 - `soundcloud-dl` available in `PATH`, unless `downloaderCommand` is configured.
 
 The upstream README shows this CLI shape:
@@ -36,8 +28,6 @@ Install from source:
 ```powershell
 go install github.com/x3x3n0m0rph/soundcloud-dl@latest
 ```
-
-On Windows, avoid configuring the command as bare `sc`: that usually resolves to `C:\Windows\system32\sc.exe`, the Service Control utility. Use `soundcloud-dl` or a full path to the downloaded binary.
 
 ## Install
 
@@ -61,16 +51,14 @@ Minimal config:
     entries: {
       soundcloud: {
         enabled: true,
-        config: {
-          telegramTarget: "@target_user"
-        }
+        config: {}
       }
     }
   }
 }
 ```
 
-With explicit commands and account:
+With explicit downloader options:
 
 ```json5
 {
@@ -79,18 +67,14 @@ With explicit commands and account:
       soundcloud: {
         enabled: true,
         config: {
-          telegramTarget: "123456789",
-          telegramAccount: "default",
           downloaderCommand: "soundcloud-dl",
           downloadPathFlag: "--download-path",
           downloaderArgs: ["--best"],
           downloaderForce: false,
           downloaderSocksProxy: "",
-          openclawCommand: "openclaw",
-          tempRoot: "C:/Temp/openclaw-soundcloud",
+          tempRoot: "/tmp/openclaw-soundcloud",
           timeoutSeconds: 600,
-          maxFileBytes: 52428800,
-          keepDownloadedFiles: false
+          maxFileBytes: 52428800
         }
       }
     }
@@ -103,17 +87,13 @@ With explicit commands and account:
 `soundcloud` accepts:
 
 - `url`: SoundCloud URL to download.
-- `telegramTarget`: optional Telegram chat id or `@username`; overrides plugin config.
-- `telegramAccount`: optional OpenClaw Telegram account id; overrides plugin config.
-- `message`: optional caption/message sent with the file.
-- `timeoutSeconds`: optional timeout for the download and send commands.
+- `timeoutSeconds`: optional timeout for the download command.
 
 Example agent tool call payload:
 
 ```json
 {
   "url": "https://soundcloud.com/artist/track",
-  "telegramTarget": "@target_user",
   "message": "Track from SoundCloud"
 }
 ```
@@ -132,7 +112,7 @@ soundcloud-dl <url> --download-path <temp-media-dir> [--force] [--socks-proxy <p
 %TEMP%/openclaw-soundcloud/media-...
 ```
 
-The plugin recursively scans that per-call directory and sends the newest completed file through OpenClaw Telegram media sending.
+The plugin recursively scans that per-call directory and returns the newest completed file path.
 
 You can replace `downloaderArgs` in plugin config. Arguments are passed directly to the downloader process after URL and `--download-path`; no shell string is built.
 
@@ -142,8 +122,7 @@ You can replace `downloaderArgs` in plugin config. Arguments are passed directly
 
 - The plugin only allows `soundcloud.com`, `on.soundcloud.com`, and `m.soundcloud.com` by default.
 - Commands are launched through the OpenClaw system runtime helper rather than direct process spawning.
-- Downloaded files are stored in an isolated per-call directory and removed after sending unless `keepDownloadedFiles` is true.
-- Use Telegram allowlists and OpenClaw approval policies appropriate for your Gateway.
+- Downloaded files are stored in an isolated per-call directory under `tempRoot`.
 
 ## Development
 

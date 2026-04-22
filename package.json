@@ -1,7 +1,7 @@
 {
   "name": "@local/openclaw-soundcloud",
   "version": "0.1.0",
-  "description": "OpenClaw plugin that downloads a SoundCloud track with x3x3n0m0rph/soundcloud-dl and sends it to a Telegram target.",
+  "description": "OpenClaw plugin that downloads a SoundCloud track with x3x3n0m0rph/soundcloud-dl and returns the downloaded file path.",
   "type": "module",
   "main": "./index.ts",
   "files": [
@@ -18,7 +18,6 @@
     "openclaw",
     "openclaw-plugin",
     "soundcloud",
-    "telegram",
     "soundcloud-dl"
   ],
   "license": "MIT",
