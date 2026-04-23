@@ -8,6 +8,8 @@ import { runCommandWithTimeout } from "openclaw/plugin-sdk/process-runtime";
  
 type PluginConfig = {
   downloadFolder?: string;
+  /** Legacy manifest key; treated like `downloadFolder`. */
+  downloadPath?: string;
   force?: boolean;
   socksProxy?: string;
   timeoutSeconds?: number;
@@ -62,9 +64,17 @@ export default definePluginEntry({
   name: "SoundCloud download plugin",
   description: "Registers a soundcloud tool that downloads a SoundCloud URL with soundcloud-dl and returns the downloaded file path.",
   register(api) {
+    const raw = api.pluginConfig as Partial<PluginConfig> | undefined;
+    const resolvedFolder =
+      typeof raw?.downloadFolder === "string" && raw.downloadFolder.trim()
+        ? raw.downloadFolder
+        : typeof raw?.downloadPath === "string" && raw.downloadPath.trim()
+          ? raw.downloadPath
+          : undefined;
     const pluginConfig = {
       ...defaultConfig,
-      ...((api as { config?: Partial<PluginConfig> }).config ?? {}),
+      ...(raw ?? {}),
+      ...(resolvedFolder !== undefined ? { downloadFolder: resolvedFolder } : {}),
     };
 
     api.registerTool({

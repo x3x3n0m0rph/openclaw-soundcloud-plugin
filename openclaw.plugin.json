@@ -6,14 +6,13 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "url": {
+      "downloadFolder": {
         "type": "string",
-        "description": "Track or playlist URL on the Soundcloud"
+        "description": "Directory where each download session creates a temporary subfolder."
       },
       "downloadPath": {
         "type": "string",
-        "default": "/tmp/openclaw/plugins/openclaw-soundcloud-plugin",
-        "description": "Flag used by soundcloud-dl to choose where media files are stored."
+        "description": "Deprecated alias for downloadFolder (same meaning)."
       },
       "force": {
         "type": "boolean",
@@ -24,6 +23,16 @@
         "type": "string",
         "default": "",
         "description": "Passes to the downloader when a SOCKS5 proxy is required."
+      },
+      "timeoutSeconds": {
+        "type": "number",
+        "default": 600,
+        "description": "Maximum time to wait for the downloader process."
+      },
+      "allowedHosts": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Hostname allowlist for the SoundCloud URL (subdomains allowed)."
       }
     }
   }
