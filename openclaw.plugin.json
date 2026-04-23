@@ -22,7 +22,7 @@
       },
       "socksProxy": {
         "type": "string",
-        "default": null,
+        "default": "",
         "description": "Passes to the downloader when a SOCKS5 proxy is required."
       }
     }
