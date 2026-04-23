@@ -26,12 +26,5 @@
         "description": "Passes to the downloader when a SOCKS5 proxy is required."
       }
     }
-  },
-  "commandAliases": [
-    {
-      "name": "sound",
-      "kind": "runtime-slash",
-      "cliCommand": "memory"
-    }
-  ]
+  }
 }
