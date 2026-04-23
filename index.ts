@@ -9,7 +9,7 @@ import { runCommandWithTimeout } from "openclaw/plugin-sdk/process-runtime";
 type PluginConfig = {
   downloadFolder?: string;
   force?: boolean;
-  socksProxy?: string | null;
+  socksProxy?: string;
   timeoutSeconds?: number;
   allowedHosts?: string[];
 };
@@ -35,7 +35,7 @@ const DOWNLOADER_COMMAND = "soundcloud-dl";
 const defaultConfig = {
   downloadFolder: "/tmp/openclaw/plugins/openclaw-soundcloud-plugin",
   force: false,
-  socksProxy: null as string | null,
+  socksProxy: "",
   timeoutSeconds: 600,
   allowedHosts: ["soundcloud.com", "on.soundcloud.com", "m.soundcloud.com"],
 } satisfies Required<
